@@ -4,12 +4,14 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const getJsonMock = jest.fn();
 const postJsonMock = jest.fn();
+const putJsonMock = jest.fn();
+const deleteJsonMock = jest.fn();
 
 jest.mock('../../../utils/api', () => ({
   getJson: (...args: unknown[]) => getJsonMock(...args),
   postJson: (...args: unknown[]) => postJsonMock(...args),
-  putJson: jest.fn(),
-  deleteJson: jest.fn()
+  putJson: (...args: unknown[]) => putJsonMock(...args),
+  deleteJson: (...args: unknown[]) => deleteJsonMock(...args)
 }));
 
 const { ProductosPage } = require('../ProductosPage');
@@ -18,6 +20,8 @@ describe('ProductosPage', () => {
   beforeEach(() => {
     getJsonMock.mockReset();
     postJsonMock.mockReset();
+    putJsonMock.mockReset();
+    deleteJsonMock.mockReset();
   });
 
   it('carga y muestra productos', async () => {
@@ -106,5 +110,34 @@ describe('ProductosPage', () => {
     expect(screen.getByPlaceholderText('Densidad en pulgadas (ej: 1/2\")')).toBeTruthy();
     expect(screen.getByPlaceholderText('Longitud estándar en metros')).toBeTruthy();
     expect(screen.getByPlaceholderText('Precio por metro')).toBeTruthy();
+  });
+
+  it('calcula precio con iva al escribir precio sin iva', async () => {
+    (getJsonMock as any).mockResolvedValue([]);
+
+    render(<ProductosPage token="token-demo" rol="ADMIN" />);
+    await waitFor(() => {
+      expect(getJsonMock).toHaveBeenCalled();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('Precio sin IVA'), { target: { value: '1000' } });
+
+    expect((screen.getByPlaceholderText('Precio con IVA') as HTMLInputElement).value).toBe('1210,00');
+  });
+
+  it('permite editar y eliminar productos solo para admin', async () => {
+    (getJsonMock as any).mockResolvedValue([{ id: 1, nombre: 'Prod', codigo: 'P-1', categoria_tipo: 'FERRETERIA', stock_actual: '10', stock_minimo: '1' }]);
+    (putJsonMock as any).mockResolvedValue({ id: 1 });
+    (deleteJsonMock as any).mockResolvedValue({ mensaje: 'ok' });
+
+    render(<ProductosPage token="token-demo" rol="ADMIN" />);
+    expect(await screen.findByText('Prod')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(putJsonMock).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+    await waitFor(() => expect(deleteJsonMock).toHaveBeenCalled());
   });
 });

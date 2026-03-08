@@ -1,6 +1,7 @@
 import express from 'express';
 import { rutasAutenticacion } from './routes/autenticacion';
 import { rutasClientes } from './routes/clientes';
+import { rutasProductos } from './routes/productos';
 
 export function crearApp() {
   const app = express();
@@ -13,6 +14,7 @@ export function crearApp() {
 
   app.use('/api/autenticacion', rutasAutenticacion);
   app.use('/api/clientes', rutasClientes);
+  app.use('/api/productos', rutasProductos);
 
   return app;
 }

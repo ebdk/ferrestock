@@ -53,6 +53,30 @@ describe('Rutas de productos', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
+    expect(findManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.any(Array)
+        })
+      })
+    );
+  });
+
+  it('filtra productos por categoría cuando se envía query categoria', async () => {
+    (findManyMock as any).mockResolvedValueOnce([]);
+
+    const response = await request(app)
+      .get('/api/productos?categoria=CORRALON')
+      .set('Authorization', `Bearer ${tokenEmpleado}`);
+
+    expect(response.status).toBe(200);
+    expect(findManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          categoria_tipo: 'CORRALON'
+        })
+      })
+    );
   });
 
   it('crea producto solo para admin', async () => {

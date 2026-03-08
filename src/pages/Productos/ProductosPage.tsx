@@ -18,6 +18,7 @@ type Producto = {
 export function ProductosPage({ token, rol }: Props) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [busqueda, setBusqueda] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState<'TODOS' | 'FERRETERIA' | 'CORRALON'>('TODOS');
   const [nombre, setNombre] = useState('');
   const [codigo, setCodigo] = useState('');
   const [categoria, setCategoria] = useState<'FERRETERIA' | 'CORRALON'>('FERRETERIA');
@@ -27,7 +28,15 @@ export function ProductosPage({ token, rol }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   async function cargarProductos(texto = '') {
-    const query = texto ? `?busqueda=${encodeURIComponent(texto)}` : '';
+    const params = new URLSearchParams();
+    if (texto) {
+      params.set('busqueda', texto);
+    }
+    if (filtroCategoria !== 'TODOS') {
+      params.set('categoria', filtroCategoria);
+    }
+
+    const query = params.toString() ? `?${params.toString()}` : '';
     const data = await getJson<Producto[]>(`/api/productos${query}`, token);
     setProductos(data);
   }
@@ -86,6 +95,18 @@ export function ProductosPage({ token, rol }: Props) {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
+          <label className="text-sm text-slate-700">
+            Filtrar categoría
+            <select
+              className="ml-2 rounded-md border px-2 py-2"
+              value={filtroCategoria}
+              onChange={(e) => setFiltroCategoria(e.target.value as 'TODOS' | 'FERRETERIA' | 'CORRALON')}
+            >
+              <option value="TODOS">Todos</option>
+              <option value="FERRETERIA">Ferretería</option>
+              <option value="CORRALON">Corralón</option>
+            </select>
+          </label>
           <button className="rounded-md bg-slate-900 text-white px-3" onClick={() => cargarProductos(busqueda)}>
             Buscar
           </button>

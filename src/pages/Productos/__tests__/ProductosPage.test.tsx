@@ -46,6 +46,20 @@ describe('ProductosPage', () => {
     });
   });
 
+  it('permite filtrar por categoria', async () => {
+    (getJsonMock as any).mockResolvedValueOnce([]);
+    (getJsonMock as any).mockResolvedValueOnce([]);
+
+    render(<ProductosPage token="token-demo" rol="EMPLEADO" />);
+
+    fireEvent.change(await screen.findByLabelText('Filtrar categoría'), { target: { value: 'CORRALON' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    await waitFor(() => {
+      expect(getJsonMock).toHaveBeenLastCalledWith('/api/productos?categoria=CORRALON', 'token-demo');
+    });
+  });
+
   it('solo admin puede crear producto', async () => {
     (getJsonMock as any).mockResolvedValue([]);
 

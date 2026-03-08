@@ -41,6 +41,28 @@ export function ClientesPage({ token }: Props) {
     setClientes(data);
   }
 
+  async function geocodificarDireccion() {
+    if (!form.direccion.trim()) {
+      setError('Ingresá una dirección para geocodificar.');
+      return;
+    }
+
+    try {
+      const data = await getJson<{ lat: number; lng: number }>(
+        `/api/clientes/geocodificar?direccion=${encodeURIComponent(form.direccion)}`,
+        token
+      );
+
+      setForm((prev) => ({
+        ...prev,
+        lat: String(data.lat),
+        lng: String(data.lng)
+      }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo geocodificar la dirección.');
+    }
+  }
+
   useEffect(() => {
     cargarClientes().catch((e) => setError(e instanceof Error ? e.message : 'No se pudieron cargar los clientes.'));
   }, []);
@@ -160,6 +182,13 @@ export function ClientesPage({ token }: Props) {
           <h2 className="text-xl font-semibold">{editandoId ? 'Editar cliente' : 'Nuevo cliente'}</h2>
           <input className="w-full rounded-md border px-3 py-2" placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
           <input className="w-full rounded-md border px-3 py-2" placeholder="Dirección" value={form.direccion} onChange={(e) => setForm({ ...form, direccion: e.target.value })} />
+          <button
+            type="button"
+            className="rounded-md bg-slate-200 px-3 py-2 text-sm"
+            onClick={geocodificarDireccion}
+          >
+            Geocodificar dirección
+          </button>
           <div className="grid grid-cols-2 gap-2">
             <input className="rounded-md border px-3 py-2" placeholder="Latitud (opcional)" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} />
             <input className="rounded-md border px-3 py-2" placeholder="Longitud (opcional)" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })} />

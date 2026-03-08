@@ -59,4 +59,26 @@ describe('ClientesPage', () => {
       expect(getJsonMock).toHaveBeenLastCalledWith('/api/clientes?busqueda=ramirez', 'token-demo');
     });
   });
+
+  it('completa latitud y longitud al geocodificar una dirección', async () => {
+    (getJsonMock as any).mockResolvedValueOnce([]);
+    (getJsonMock as any).mockResolvedValueOnce({ lat: -34.7211, lng: -58.2546 });
+
+    render(<ClientesPage token="token-demo" />);
+
+    fireEvent.change(await screen.findByPlaceholderText('Dirección'), {
+      target: { value: 'Zapiola y Av. Los Quilmes, Bernal Oeste' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Geocodificar dirección' }));
+
+    await waitFor(() => {
+      expect(getJsonMock).toHaveBeenLastCalledWith(
+        '/api/clientes/geocodificar?direccion=Zapiola%20y%20Av.%20Los%20Quilmes%2C%20Bernal%20Oeste',
+        'token-demo'
+      );
+    });
+
+    expect((screen.getByPlaceholderText('Latitud (opcional)') as HTMLInputElement).value).toBe('-34.7211');
+    expect((screen.getByPlaceholderText('Longitud (opcional)') as HTMLInputElement).value).toBe('-58.2546');
+  });
 });

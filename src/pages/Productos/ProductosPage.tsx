@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { getJson, postJson } from '../../utils/api';
+import { deleteJson, getJson, postJson, putJson } from '../../utils/api';
 
 type Props = {
   token: string;
@@ -21,11 +21,23 @@ export function ProductosPage({ token, rol }: Props) {
   const [filtroCategoria, setFiltroCategoria] = useState<'TODOS' | 'FERRETERIA' | 'CORRALON'>('TODOS');
   const [nombre, setNombre] = useState('');
   const [codigo, setCodigo] = useState('');
+  const [precioSinIva, setPrecioSinIva] = useState('');
+  const [precioConIva, setPrecioConIva] = useState('');
   const [categoria, setCategoria] = useState<'FERRETERIA' | 'CORRALON'>('FERRETERIA');
   const [densidadPulgadas, setDensidadPulgadas] = useState('');
   const [longitudMetros, setLongitudMetros] = useState('');
   const [precioPorMetro, setPrecioPorMetro] = useState('');
+  const [editandoId, setEditandoId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  function parseNumero(valor: string): number {
+    const normalizado = valor.replace(/\./g, '').replace(',', '.');
+    return Number(normalizado || '0');
+  }
+
+  function formatearNumero(valor: number): string {
+    return valor.toFixed(2).replace('.', ',');
+  }
 
   async function cargarProductos(texto = '') {
     const params = new URLSearchParams();
@@ -45,7 +57,7 @@ export function ProductosPage({ token, rol }: Props) {
     cargarProductos().catch((e) => setError(e instanceof Error ? e.message : 'No se pudieron cargar los productos.'));
   }, []);
 
-  async function crearProducto(event: FormEvent) {
+  async function guardarProducto(event: FormEvent) {
     event.preventDefault();
 
     if (rol !== 'ADMIN') {
@@ -53,34 +65,48 @@ export function ProductosPage({ token, rol }: Props) {
     }
 
     try {
-      await postJson(
-        '/api/productos',
-        {
-          nombre,
-          codigo,
-          categoria_tipo: categoria,
-          unidad_venta: 'unidad',
-          precio_sin_iva: 0,
-          precio_con_iva: 0,
-          stock_actual: 0,
-          stock_minimo: 0,
-          densidad_pulgadas: categoria === 'CORRALON' ? densidadPulgadas : null,
-          longitud_metros: categoria === 'CORRALON' && longitudMetros ? Number(longitudMetros) : null,
-          precio_por_metro: categoria === 'CORRALON' && precioPorMetro ? Number(precioPorMetro) : null,
-          activo: true
-        },
-        token
-      );
+      const payload = {
+        nombre,
+        codigo,
+        categoria_tipo: categoria,
+        unidad_venta: 'unidad',
+        precio_sin_iva: parseNumero(precioSinIva),
+        precio_con_iva: parseNumero(precioConIva),
+        stock_actual: 0,
+        stock_minimo: 0,
+        densidad_pulgadas: categoria === 'CORRALON' ? densidadPulgadas : null,
+        longitud_metros: categoria === 'CORRALON' && longitudMetros ? Number(longitudMetros) : null,
+        precio_por_metro: categoria === 'CORRALON' && precioPorMetro ? Number(precioPorMetro) : null,
+        activo: true
+      };
+
+      if (editandoId) {
+        await putJson(`/api/productos/${editandoId}`, payload, token);
+      } else {
+        await postJson('/api/productos', payload, token);
+      }
 
       setNombre('');
       setCodigo('');
+      setPrecioSinIva('');
+      setPrecioConIva('');
       setCategoria('FERRETERIA');
       setDensidadPulgadas('');
       setLongitudMetros('');
       setPrecioPorMetro('');
+      setEditandoId(null);
       await cargarProductos(busqueda);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo crear el producto.');
+      setError(e instanceof Error ? e.message : 'No se pudo guardar el producto.');
+    }
+  }
+
+  async function eliminarProducto(id: number) {
+    try {
+      await deleteJson(`/api/productos/${id}`, token);
+      await cargarProductos(busqueda);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo eliminar el producto.');
     }
   }
 
@@ -122,12 +148,34 @@ export function ProductosPage({ token, rol }: Props) {
               {Number(producto.stock_actual) <= Number(producto.stock_minimo ?? 0) ? (
                 <p className="text-sm text-red-600 font-medium">Stock mínimo alcanzado</p>
               ) : null}
+              {rol === 'ADMIN' ? (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    className="text-sm px-2 py-1 bg-slate-200 rounded"
+                    onClick={() => {
+                      setEditandoId(producto.id);
+                      setNombre(producto.nombre);
+                      setCodigo(producto.codigo);
+                    }}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="text-sm px-2 py-1 bg-red-100 text-red-700 rounded"
+                    onClick={() => eliminarProducto(producto.id)}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              ) : null}
             </article>
           ))}
         </div>
       </div>
 
-      <form className="bg-white border rounded-lg p-4 space-y-3" onSubmit={crearProducto}>
+      <form className="bg-white border rounded-lg p-4 space-y-3" onSubmit={guardarProducto}>
         <h2 className="text-xl font-semibold">Alta rápida</h2>
         <input
           className="w-full rounded-md border px-3 py-2"
@@ -140,6 +188,28 @@ export function ProductosPage({ token, rol }: Props) {
           placeholder="Código interno"
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
+        />
+        <input
+          className="w-full rounded-md border px-3 py-2"
+          placeholder="Precio sin IVA"
+          value={precioSinIva}
+          onChange={(e) => {
+            const valor = e.target.value;
+            setPrecioSinIva(valor);
+            const numero = parseNumero(valor);
+            setPrecioConIva(formatearNumero(numero * 1.21));
+          }}
+        />
+        <input
+          className="w-full rounded-md border px-3 py-2"
+          placeholder="Precio con IVA"
+          value={precioConIva}
+          onChange={(e) => {
+            const valor = e.target.value;
+            setPrecioConIva(valor);
+            const numero = parseNumero(valor);
+            setPrecioSinIva(formatearNumero(numero / 1.21));
+          }}
         />
         <label className="block text-sm text-slate-700">
           Categoría
@@ -179,7 +249,7 @@ export function ProductosPage({ token, rol }: Props) {
 
         {rol === 'ADMIN' ? (
           <button className="rounded-md bg-slate-900 text-white px-3 py-2" type="submit">
-            Crear producto
+            {editandoId ? 'Guardar cambios' : 'Crear producto'}
           </button>
         ) : (
           <p className="text-sm text-slate-600">Solo ADMIN puede crear o editar productos.</p>

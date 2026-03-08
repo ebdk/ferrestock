@@ -17,6 +17,44 @@ const schemaCliente = z.object({
 
 router.use(requerirSesion, requerirRol(['ADMIN', 'EMPLEADO']));
 
+router.get('/geocodificar', async (req, res) => {
+  const direccion = String(req.query.direccion ?? '').trim();
+
+  if (!direccion) {
+    res.status(400).json({ mensaje: 'La dirección es obligatoria para geocodificar.' });
+    return;
+  }
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion)}&limit=1`;
+    const respuesta = await fetch(url, {
+      headers: {
+        'User-Agent': 'ferrestock/0.1.0'
+      }
+    });
+
+    if (!respuesta.ok) {
+      res.status(503).json({ mensaje: 'No se pudo geocodificar la dirección en este momento.' });
+      return;
+    }
+
+    const resultados = (await respuesta.json()) as Array<{ lat: string; lon: string }>;
+    const primero = resultados[0];
+
+    if (!primero) {
+      res.status(404).json({ mensaje: 'No se encontraron coordenadas para esa dirección.' });
+      return;
+    }
+
+    res.json({
+      lat: Number(primero.lat),
+      lng: Number(primero.lon)
+    });
+  } catch {
+    res.status(503).json({ mensaje: 'No se pudo geocodificar la dirección en este momento.' });
+  }
+});
+
 router.get('/', async (req, res) => {
   const busqueda = String(req.query.busqueda ?? '').trim();
 

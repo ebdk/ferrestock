@@ -116,4 +116,20 @@ describe('Rutas de clientes', () => {
     expect(deleteMock).toHaveBeenCalledTimes(1);
     expect(response.body.mensaje).toBe('Cliente eliminado correctamente.');
   });
+
+  it('geocodifica una dirección y devuelve lat/lng', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch' as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ lat: '-34.7211', lon: '-58.2546' }]
+    } as any);
+
+    const response = await request(app)
+      .get('/api/clientes/geocodificar?direccion=Zapiola%20Bernal')
+      .set('Authorization', `Bearer ${tokenEmpleado}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.lat).toBe(-34.7211);
+    expect(response.body.lng).toBe(-58.2546);
+    fetchMock.mockRestore();
+  });
 });

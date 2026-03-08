@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ClientesPage } from '../Clientes/ClientesPage';
+import { ProductosPage } from '../Productos/ProductosPage';
 
 type Props = {
   nombre: string;
@@ -8,7 +9,7 @@ type Props = {
 };
 
 export function PanelGeneralPage({ nombre, rol, token }: Props) {
-  const [moduloActivo, setModuloActivo] = useState<'inicio' | 'clientes'>('clientes');
+  const [moduloActivo, setModuloActivo] = useState<'clientes' | 'productos'>('clientes');
 
   return (
     <main className="min-h-screen p-6 bg-white">
@@ -27,9 +28,16 @@ export function PanelGeneralPage({ nombre, rol, token }: Props) {
         >
           Clientes
         </button>
+        <button
+          onClick={() => setModuloActivo('productos')}
+          className={`px-3 py-2 rounded-md ${moduloActivo === 'productos' ? 'bg-slate-900 text-white' : 'bg-slate-200'}`}
+        >
+          Productos
+        </button>
       </nav>
 
       {moduloActivo === 'clientes' ? <ClientesPage token={token} /> : null}
+      {moduloActivo === 'productos' ? <ProductosPage token={token} rol={rol} /> : null}
     </main>
   );
 }

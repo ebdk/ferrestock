@@ -12,6 +12,7 @@ type Producto = {
   codigo: string;
   categoria_tipo: 'FERRETERIA' | 'CORRALON';
   stock_actual: string;
+  stock_minimo?: string;
 };
 
 export function ProductosPage({ token, rol }: Props) {
@@ -19,6 +20,10 @@ export function ProductosPage({ token, rol }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [nombre, setNombre] = useState('');
   const [codigo, setCodigo] = useState('');
+  const [categoria, setCategoria] = useState<'FERRETERIA' | 'CORRALON'>('FERRETERIA');
+  const [densidadPulgadas, setDensidadPulgadas] = useState('');
+  const [longitudMetros, setLongitudMetros] = useState('');
+  const [precioPorMetro, setPrecioPorMetro] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   async function cargarProductos(texto = '') {
@@ -44,15 +49,15 @@ export function ProductosPage({ token, rol }: Props) {
         {
           nombre,
           codigo,
-          categoria_tipo: 'FERRETERIA',
+          categoria_tipo: categoria,
           unidad_venta: 'unidad',
           precio_sin_iva: 0,
           precio_con_iva: 0,
           stock_actual: 0,
           stock_minimo: 0,
-          densidad_pulgadas: null,
-          longitud_metros: null,
-          precio_por_metro: null,
+          densidad_pulgadas: categoria === 'CORRALON' ? densidadPulgadas : null,
+          longitud_metros: categoria === 'CORRALON' && longitudMetros ? Number(longitudMetros) : null,
+          precio_por_metro: categoria === 'CORRALON' && precioPorMetro ? Number(precioPorMetro) : null,
           activo: true
         },
         token
@@ -60,6 +65,10 @@ export function ProductosPage({ token, rol }: Props) {
 
       setNombre('');
       setCodigo('');
+      setCategoria('FERRETERIA');
+      setDensidadPulgadas('');
+      setLongitudMetros('');
+      setPrecioPorMetro('');
       await cargarProductos(busqueda);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo crear el producto.');
@@ -89,6 +98,9 @@ export function ProductosPage({ token, rol }: Props) {
               <p className="text-sm text-slate-700">Código: {producto.codigo}</p>
               <p className="text-sm text-slate-700">Categoría: {producto.categoria_tipo}</p>
               <p className="text-sm text-slate-700">Stock actual: {producto.stock_actual}</p>
+              {Number(producto.stock_actual) <= Number(producto.stock_minimo ?? 0) ? (
+                <p className="text-sm text-red-600 font-medium">Stock mínimo alcanzado</p>
+              ) : null}
             </article>
           ))}
         </div>
@@ -108,6 +120,39 @@ export function ProductosPage({ token, rol }: Props) {
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
         />
+        <label className="block text-sm text-slate-700">
+          Categoría
+          <select
+            className="mt-1 w-full rounded-md border px-3 py-2"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value as 'FERRETERIA' | 'CORRALON')}
+          >
+            <option value="FERRETERIA">Ferretería</option>
+            <option value="CORRALON">Corralón</option>
+          </select>
+        </label>
+        {categoria === 'CORRALON' ? (
+          <>
+            <input
+              className="w-full rounded-md border px-3 py-2"
+              placeholder='Densidad en pulgadas (ej: 1/2")'
+              value={densidadPulgadas}
+              onChange={(e) => setDensidadPulgadas(e.target.value)}
+            />
+            <input
+              className="w-full rounded-md border px-3 py-2"
+              placeholder="Longitud estándar en metros"
+              value={longitudMetros}
+              onChange={(e) => setLongitudMetros(e.target.value)}
+            />
+            <input
+              className="w-full rounded-md border px-3 py-2"
+              placeholder="Precio por metro"
+              value={precioPorMetro}
+              onChange={(e) => setPrecioPorMetro(e.target.value)}
+            />
+          </>
+        ) : null}
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 

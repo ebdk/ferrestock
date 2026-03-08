@@ -121,4 +121,27 @@ describe('Rutas de productos', () => {
     expect(responseDelete.status).toBe(200);
     expect(responseDelete.body.mensaje).toBe('Producto eliminado correctamente.');
   });
+
+  it('valida campos obligatorios para productos de corralon', async () => {
+    const response = await request(app)
+      .post('/api/productos')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({
+        nombre: 'Planchuela 1/2"',
+        codigo: 'PL-12',
+        categoria_tipo: 'CORRALON',
+        unidad_venta: 'barra',
+        precio_sin_iva: 5000,
+        precio_con_iva: 6050,
+        stock_actual: 10,
+        stock_minimo: 2,
+        densidad_pulgadas: null,
+        longitud_metros: null,
+        precio_por_metro: null,
+        activo: true
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.mensaje).toBe('Para CORRALON, densidad, longitud y precio por metro son obligatorios.');
+  });
 });

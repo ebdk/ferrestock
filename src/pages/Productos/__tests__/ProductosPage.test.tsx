@@ -61,4 +61,36 @@ describe('ProductosPage', () => {
     });
     expect(screen.getByRole('button', { name: 'Crear producto' })).toBeTruthy();
   });
+
+  it('muestra alerta visual cuando stock está por debajo del mínimo', async () => {
+    (getJsonMock as any).mockResolvedValueOnce([
+      {
+        id: 1,
+        nombre: 'Electrodo 6013',
+        codigo: 'EL-6013',
+        categoria_tipo: 'FERRETERIA',
+        stock_actual: '2',
+        stock_minimo: '5'
+      }
+    ]);
+
+    render(<ProductosPage token="token-demo" rol="EMPLEADO" />);
+
+    expect(await screen.findByText('Stock mínimo alcanzado')).toBeTruthy();
+  });
+
+  it('muestra campos de corralon al seleccionar categoria CORRALON', async () => {
+    (getJsonMock as any).mockResolvedValue([]);
+
+    render(<ProductosPage token="token-demo" rol="ADMIN" />);
+    await waitFor(() => {
+      expect(getJsonMock).toHaveBeenCalled();
+    });
+
+    fireEvent.change(screen.getByLabelText('Categoría'), { target: { value: 'CORRALON' } });
+
+    expect(screen.getByPlaceholderText('Densidad en pulgadas (ej: 1/2\")')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Longitud estándar en metros')).toBeTruthy();
+    expect(screen.getByPlaceholderText('Precio por metro')).toBeTruthy();
+  });
 });

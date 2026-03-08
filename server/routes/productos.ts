@@ -19,6 +19,15 @@ const schemaProducto = z.object({
   longitud_metros: z.number().nullable().optional(),
   precio_por_metro: z.number().nullable().optional(),
   activo: z.boolean().default(true)
+}).superRefine((value, ctx) => {
+  if (value.categoria_tipo === 'CORRALON') {
+    if (!value.densidad_pulgadas || value.longitud_metros == null || value.precio_por_metro == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Para CORRALON, densidad, longitud y precio por metro son obligatorios.'
+      });
+    }
+  }
 });
 
 router.get('/', requerirSesion, requerirRol(['ADMIN', 'EMPLEADO']), async (req, res) => {

@@ -13,6 +13,11 @@ enum rol_usuario {
   REPARTIDOR
 }
 
+enum categoria_tipo_producto {
+  FERRETERIA
+  CORRALON
+}
+
 model usuarios {
   id                    Int         @id @default(autoincrement())
   nombre                String
@@ -49,4 +54,22 @@ model compras {
   cliente      clientes  @relation(fields: [cliente_id], references: [id])
 
   @@map("compras")
+}
+
+model productos {
+  id                Int                    @id @default(autoincrement())
+  nombre            String
+  codigo            String                 @unique
+  categoria_tipo    categoria_tipo_producto
+  unidad_venta      String
+  precio_sin_iva    Decimal                @db.Decimal(12, 2)
+  precio_con_iva    Decimal                @db.Decimal(12, 2)
+  stock_actual      Decimal                @db.Decimal(12, 3)
+  stock_minimo      Decimal                @db.Decimal(12, 3)
+  densidad_pulgadas String?
+  longitud_metros   Decimal?               @db.Decimal(12, 3)
+  precio_por_metro  Decimal?               @db.Decimal(12, 2)
+  activo            Boolean                @default(true)
+
+  @@map("productos")
 }

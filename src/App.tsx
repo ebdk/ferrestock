@@ -48,5 +48,5 @@ export function App() {
     return <RepartidorPage nombre={sesion.usuario.nombre} />;
   }
 
-  return <PanelGeneralPage nombre={sesion.usuario.nombre} rol={sesion.usuario.rol} />;
+  return <PanelGeneralPage nombre={sesion.usuario.nombre} rol={sesion.usuario.rol} token={sesion.token} />;
 }

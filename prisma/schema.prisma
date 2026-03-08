@@ -18,6 +18,12 @@ enum categoria_tipo_producto {
   CORRALON
 }
 
+enum tipo_movimiento_stock {
+  VENTA
+  AJUSTE
+  ENTRADA
+}
+
 model usuarios {
   id                    Int         @id @default(autoincrement())
   nombre                String
@@ -70,6 +76,20 @@ model productos {
   longitud_metros   Decimal?               @db.Decimal(12, 3)
   precio_por_metro  Decimal?               @db.Decimal(12, 2)
   activo            Boolean                @default(true)
+  movimientos_stock stock_movimientos[]
 
   @@map("productos")
+}
+
+model stock_movimientos {
+  id         Int                  @id @default(autoincrement())
+  producto_id Int
+  tipo       tipo_movimiento_stock
+  cantidad   Decimal              @db.Decimal(12, 3)
+  motivo     String
+  created_by Int
+  created_at DateTime             @default(now())
+  producto   productos            @relation(fields: [producto_id], references: [id])
+
+  @@map("stock_movimientos")
 }
